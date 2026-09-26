@@ -1,0 +1,23 @@
+[project]
+name = "residencial-aurora"
+version = "0.1.0"
+description = "Assistente do Residencial Aurora construido com Google ADK e exposto por uma API FastAPI."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.141.1",
+    "google-adk==2.10.0",
+    "python-dotenv>=1.2.3",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+aurora-api = "aurora.cli:subir_api"
+aurora-restaurar = "aurora.cli:restaurar_dados"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aurora"]
