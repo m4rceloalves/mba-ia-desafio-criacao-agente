@@ -13,6 +13,11 @@ from aurora import armazenamento, config, runtime
 AVISO_PENDENCIA = (
     "Há uma confirmação pendente. Responda pela rota de confirmações antes de enviar novas mensagens."
 )
+RESPOSTAS_CONFIRMACAO_RECUSADA = {
+    "reservar_area": "Confirmação recusada: nenhuma reserva foi feita.",
+    "autorizar_visitante": "Confirmação recusada: nenhuma autorização de entrada foi registrada.",
+}
+RESPOSTA_CONFIRMACAO_RECUSADA = "Confirmação recusada: nenhuma ação foi executada."
 
 
 class CriarSessao(BaseModel):
@@ -120,7 +125,8 @@ async def responder_confirmacao(
     runner = request.app.state.runner
     async with _tranca(request, session_id):
         pendentes = await runtime.pendentes_da_sessao(runner, apartamento, session_id)
-        if corpo.id not in {pendencia["id"] for pendencia in pendentes}:
+        pendencia = next((item for item in pendentes if item["id"] == corpo.id), None)
+        if pendencia is None:
             raise HTTPException(
                 status_code=409,
                 detail="não existe confirmação pendente com esse id nesta sessão",
@@ -128,6 +134,10 @@ async def responder_confirmacao(
         resposta, pendentes = await runtime.responder_confirmacao(
             runner, apartamento, session_id, corpo.id, corpo.confirmado
         )
+        if not corpo.confirmado and all(item["id"] != corpo.id for item in pendentes):
+            resposta = RESPOSTAS_CONFIRMACAO_RECUSADA.get(
+                pendencia["acao"], RESPOSTA_CONFIRMACAO_RECUSADA
+            )
     return RespostaConversa(resposta=resposta, confirmacoes_pendentes=pendentes)
 
 
